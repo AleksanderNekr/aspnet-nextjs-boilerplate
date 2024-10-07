@@ -17,9 +17,12 @@ app.UseSerilogRequestLogging();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+	app.UseSwagger();
+	app.UseSwaggerUI();
 }
+
+app.MapGet("/ping", () => "pong")
+	.WithTags("Health");
 
 Log.Information("Application started");
 
@@ -29,21 +32,23 @@ return;
 
 static void SetupLogging(WebApplicationBuilder builder)
 {
-    Log.Logger = new LoggerConfiguration()
-        .ReadFrom.Configuration(builder.Configuration)
-        .CreateLogger();
+	Log.Logger = new LoggerConfiguration()
+		.ReadFrom.Configuration(builder.Configuration)
+		.CreateLogger();
 
-    builder.Host.UseSerilog();
+	builder.Host.UseSerilog();
 
-    builder.Services.AddLogging(static builder =>
-    {
-        builder.ClearProviders();
-        builder.AddSerilog(dispose: true);
-    });
+	builder.Services.AddLogging(
+		static builder =>
+		{
+			builder.ClearProviders();
+			builder.AddSerilog(dispose: true);
+		});
 
-    builder.Services.AddHttpLogging(static options =>
-    {
-        options.LoggingFields = HttpLoggingFields.RequestMethod | HttpLoggingFields.Response;
-        options.MediaTypeOptions.AddText(MediaTypeNames.Application.Json);
-    });
+	builder.Services.AddHttpLogging(
+		static options =>
+		{
+			options.LoggingFields = HttpLoggingFields.RequestMethod | HttpLoggingFields.Response;
+			options.MediaTypeOptions.AddText(MediaTypeNames.Application.Json);
+		});
 }
