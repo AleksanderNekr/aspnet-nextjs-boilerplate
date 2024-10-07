@@ -1,7 +1,9 @@
 using System.Net.Mime;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.HttpLogging;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
+using WebApi.Database;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
@@ -9,6 +11,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
+SetupDb(builder);
 SetupLogging(builder);
 
 var app = builder.Build();
@@ -50,5 +53,21 @@ static void SetupLogging(WebApplicationBuilder builder)
 		{
 			options.LoggingFields = HttpLoggingFields.RequestMethod | HttpLoggingFields.Response;
 			options.MediaTypeOptions.AddText(MediaTypeNames.Application.Json);
+		});
+}
+
+static void SetupDb(WebApplicationBuilder builder)
+{
+	var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+	builder.Services.AddDbContext<AppDbContext>(
+		optionsBuilder =>
+		{
+			optionsBuilder.UseSqlite(connectionString);
+
+			if (builder.Environment.IsDevelopment())
+			{
+				optionsBuilder.LogTo(Log.Debug, [DbLoggerCategory.Database.Command.Name], LogLevel.Information);
+				optionsBuilder.EnableSensitiveDataLogging();
+			}
 		});
 }
